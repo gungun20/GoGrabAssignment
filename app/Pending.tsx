@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, TouchableOpacity , Image } from "react-native";
+import { View, Text, TouchableOpacity , Image , TextInput} from "react-native";
 import Modal from "react-native-modal";
 import { useSQLiteContext } from "expo-sqlite";
 
@@ -7,7 +7,11 @@ function Pending(props: any) {
   const db = useSQLiteContext();
   const [data, setData] = useState({ array: [] });
   const [visible, setVisible] = useState(false); // Setting visibility of the Modal for Marking the task completed
- // setting the array of tasks
+  // setting the array of tasks
+  const [visible1, setVisible1] = useState(false);
+  const [text1, setText1] = useState("");
+  const [text2, setText2] = useState("");
+  const [index, setIndex] = useState(-1);
   async function set() {
     setData({
       array: await db.getAllAsync("SELECT * FROM pending WHERE value=?", [
@@ -19,7 +23,8 @@ function Pending(props: any) {
     set();
   });
 // Deleting the Task from the Group through remove function
-  async function remove(task : any) {
+  async function remove(task: any) {
+    
     await db.runAsync("DELETE FROM pending WHERE task = ?", [task]);
   }
   // Marking the task Done through completed function
@@ -31,9 +36,58 @@ function Pending(props: any) {
     );
     setVisible(false);
   };
+  const press = (index1 : any) => {
+    setIndex(index1);
+    setVisible1(true);
+  }
+  const edit = async () => {
+    
+    await db.runAsync("UPDATE pending SET task = ? WHERE id = ?", [text1,index+1]);
+    await db.runAsync("UPDATE pending SET description = ? WHERE id = ?", [text2, index + 1]);
+    setData({
+      array: await db.getAllAsync("SELECT * FROM pending WHERE value=?", [
+        props.value,
+      ]),
+    });
+    setVisible1(false);
+  }
   return (
     <View className="">
-      {data.array.map((element: any) => {
+      <Modal isVisible={visible1}>
+        <View className=" bg-white">
+          <View className="my-10 mx-5 space-y-5">
+            <Text className="text-lg">Edit Task :</Text>
+            <TextInput
+              onChangeText={(text) => setText1(text)}
+              value={text1}
+              className="border-b-2 w-3/4"
+            />
+            <Text className="text-lg">Edit Description : </Text>
+            <TextInput
+              onChangeText={(text) => setText2(text)}
+              value={text2}
+              className="border-2 w-72 h-40"
+              multiline={true}
+              textAlignVertical="top"
+            />
+          </View>
+          <View className="flex-row justify-end m-6 space-x-10">
+            <TouchableOpacity
+              onPress={() => setVisible1(false)}
+              className=" bg-blue-800 p-3"
+            >
+              <Text className="text-white">Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={edit}
+              className=" bg-blue-800 p-3"
+            >
+              <Text className="text-white">Edit</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+      {data.array.map((element: any, index: any) => {
         return (
           <>
             <View className="border-2 m-6">
@@ -75,9 +129,17 @@ function Pending(props: any) {
               <View className="flex-row justify-between my-4 mx-8">
                 <TouchableOpacity onPress={() => remove(element.task)}>
                   <Image
-                     className="h-6 w-6"
+                    className="h-6 w-6"
                     source={{
                       uri: "https://img.icons8.com/?size=24&id=99971&format=png&color=FA5252",
+                    }}
+                  />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => press(index)}>
+                  <Image
+                    className="h-6 w-6"
+                    source={{
+                      uri: "https://img.icons8.com/?size=24&id=86374&format=png",
                     }}
                   />
                 </TouchableOpacity>
